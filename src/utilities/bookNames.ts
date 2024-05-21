@@ -1,4 +1,3 @@
-import { BookPayload } from "../shared/bookPayloadType";
 interface FileNamesToBooks {
   [key: string]: string;
 }

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { fileExists, isProjectUSFM } from "./utilities/usfm";
-import { USFMProvider } from "./providers/usfm";
+// import { USFMEditorProvider } from "./providers/USFMEditor";
+import { USFMEditorProvider } from "./providers/test";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "scribe-xelah" is now active!');
@@ -19,24 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
     path: vscode.Uri.joinPath(currentProjectURI, "metadata.json").path,
   });
 
-  (async () => {
-    const isCurrentProject = await isProjectUSFM(metadataFileUri);
-
-    vscode.commands.executeCommand(
-      "setContext",
-      "scribe-xelah.isProjectUSFM",
-      isCurrentProject
-    );
-
-    if (!isCurrentProject) {
-      vscode.window.showWarningMessage(
-        "Current project isn't a text translation"
-      );
-      return;
-    }
-    // TextTranslationPanel.render(context.extensionUri, context);
-  })();
-
-  context.subscriptions.push(USFMProvider.register(context));
+  context.subscriptions.push(USFMEditorProvider.register(context));
 }
+
 export function deactivate() {}

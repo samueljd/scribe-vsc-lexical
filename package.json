@@ -12,6 +12,18 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "customEditors": [
+      {
+        "viewType": "scribe-lexical-vsc.scribeLexicalEditor",
+        "displayName": "Scribe Lexical editor",
+        "selector": [
+          {
+            "filenamePattern": "*.usfm"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
     "commands": [
       {
         "command": "scribe-lexical-vsc.helloWorld",
