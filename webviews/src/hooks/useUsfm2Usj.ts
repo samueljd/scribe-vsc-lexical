@@ -35,7 +35,6 @@ export const useUsfm2Usj = (): Usj => {
   };
 
   useEffect(() => {
-    console.log("document change",document);
     (async () => document && (await parseUSFM(document)))();
   }, [document]);
 

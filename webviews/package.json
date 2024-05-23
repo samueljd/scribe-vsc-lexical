@@ -13,12 +13,16 @@
     "@biblionexus-foundation/platform-editor": "^0.2.1",
     "@biblionexus-foundation/scribe-editor": "^0.0.1",
     "@tailwindcss/typography": "^0.5.13",
+    "@types/lodash": "^4.17.4",
+    "@types/lodash.debounce": "^4.0.9",
     "@types/vscode-webview": "^1.57.5",
     "fast-equals": "^5.0.1",
+    "lodash": "^4.17.21",
+    "lodash.debounce": "^4.0.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup-plugin-smart-asset": "^2.1.2",
-    "sj-usfm-grammar": "^3.0.0",
+    "sj-usfm-grammar": "^3.0.1",
     "vite-tsconfig-paths": "^4.3.2"
   },
   "devDependencies": {

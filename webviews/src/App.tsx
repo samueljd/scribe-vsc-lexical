@@ -1,13 +1,14 @@
 import { useState, useMemo, SyntheticEvent, useRef, useEffect } from "react";
 // import { useEffect, useState } from "react";
-import { useUsfm2Usj } from "./hooks/useUsfm2Usj.js";
+// import { useUsfm2Usj } from "./hooks/useUsfm2Usj.js";
 import { Editor, EditorRef } from "@biblionexus-foundation/scribe-editor";
 import { type Usj } from "@biblionexus-foundation/scribe-editor";
 import { getViewOptions } from "@biblionexus-foundation/scribe-editor";
 import { DEFAULT_VIEW_MODE } from "@biblionexus-foundation/scribe-editor";
 import { UsjNodeOptions } from "@biblionexus-foundation/scribe-editor";
 import { immutableNoteCallerNodeName } from "@biblionexus-foundation/scribe-editor";
-import { Usj2Usfm } from "./hooks/usj2Usfm.js";
+import {debounce} from "lodash";
+// import { Usj2Usfm } from "./hooks/usj2Usfm.js";
 import { vscode } from "./vscode";
 import { MessageType } from "../../src/providers/messageTypes.js";
 
@@ -18,30 +19,32 @@ const defaultUsj: Usj = {
 };
 function App() {
   // const usj = document && useUsfm2Usj({ usfm: document });
-  const [editedUsfm, setEditedUsfm] = useState<string>();
-  const usj = useUsfm2Usj();
+  const [usj, setUsj] = useState<Usj | undefined>();
+  // const [editedUsfm, setEditedUsfm] = useState<string>();
+  // const usj = useUsfm2Usj();
 
   const editorRef = useRef<EditorRef>(null!);
+  const previousUsjRef = useRef<Usj | null>(null);
 
-  // useEffect(() => {
-  //   vscode.setMessageListeners(async (event) => {
-  //     console.log("webview received message", event.data.type);
-  //     switch (event.data.type) {
-  //       case MessageType.updateDocument:
-  //         {
-  //           console.log("posting message from webview updateDocument");
-  //           editedUsfm &&
-  //             vscode.postMessage({
-  //               type: MessageType.save,
-  //               payload: {
-  //                 usfm: editedUsfm,
-  //               },
-  //             });
-  //         }
-  //         break;
-  //     }
-  //   });
-  // }, []);
+
+  useEffect(() => {
+    console.log("setting message listeners");
+    vscode.setMessageListeners((event) => {
+      switch (event.data.type) {
+        case "update": {
+          console.log(
+            `received message from extension :${event.data.type}`,
+            event.data
+          );
+          setUsj(event.data.payload.usj);
+          break;
+        }
+        case "fileOpened":
+          console.log(`received message from extension :${event.data.type}`);
+          break;
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -59,17 +62,24 @@ function App() {
     },
   };
   const viewOptions = useMemo(() => getViewOptions(viewMode), [viewMode]);
-  // const noteViewOptions = useMemo(() => getViewOptions(noteViewMode), [noteViewMode]);
+  // const noteViewOptions = useMemo(() => getViewOptions(noteViepnpm i @types/lodash.debouncewMode), [noteViewMode]);
+
   const onChange = async (usj: Usj) => {
-    const usfm = await Usj2Usfm(usj);
-    setEditedUsfm(usfm);
-    console.log(editedUsfm);
     vscode.postMessage({
       type: MessageType.updateDocument,
-      payload: { usfm },
+      payload: { usj },
     });
   };
-
+  
+  const debouncedOnChange = debounce(onChange, 1000);
+  
+  const handleInputChange = (usj: Usj) => {
+    if (previousUsjRef.current !== usj) {
+      debouncedOnChange(usj);
+      previousUsjRef.current = usj;
+    }
+  };
+  
   return (
     // <div className="flex-center m-2 flex h-editor   justify-center p-8">
     //   <div className="relative w-2/3 overflow-hidden rounded-md border-2 border-secondary">
@@ -87,7 +97,7 @@ function App() {
           <Editor
             usjInput={defaultUsj}
             ref={editorRef}
-            onChange={onChange}
+            onChange={handleInputChange}
             viewOptions={viewOptions}
             nodeOptions={nodeOptions}
           />
