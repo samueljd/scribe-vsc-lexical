@@ -17,6 +17,8 @@ import getUsfmParser from "./USFMParser";
 export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
   private _webview: vscode.Webview | undefined;
   private _context: vscode.ExtensionContext | undefined;
+  private _usfmParser: any | undefined;
+  private _usfmParserInitialized: Promise<void> | undefined;
 
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new USFMEditorProvider(context);
@@ -59,7 +61,6 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
         // Cache hit with the old hash
         console.log("Cache hit");
         const usj = readCache(oldHash);
-        this.context.workspaceState.update(document.uri.toString(), usj);
         webviewPanel.webview.postMessage({
           type: "update",
           payload: { usj },
@@ -73,7 +74,6 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
         const usj = await this.convertUsfmToUsj(usfmContent);
         writeCache(newHash, usj);
         updateCacheMap(this.context, filePath, newHash);
-        this.context.workspaceState.update(document.uri.toString(), usj);
         webviewPanel.webview.postMessage({
           type: "update",
           payload: { usj },
@@ -101,17 +101,22 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
       changeDocumentSubscription.dispose();
     });
 
-    webviewPanel.webview.onDidReceiveMessage((e) => {
+    webviewPanel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case MessageType.updateDocument: {
           console.log("Updating document", e.payload?.usj);
-          // const edit = new vscode.WorkspaceEdit();
-          // edit.replace(
-          //     document.uri,
-          //     new vscode.Range(0, 0, document.lineCount, 0),
-          //     e.payload?.usfm as string
-          // );
-          // vscode.workspace.applyEdit(edit);
+          if (e.payload?.usj.content.length > 0) {
+            const usfm = await this.convertUsjToUsfm(e.payload?.usj);
+            console.log({ usfm });
+
+            const edit = new vscode.WorkspaceEdit();
+            edit.replace(
+                document.uri,
+                new vscode.Range(0, 0, document.lineCount, 0),
+                usfm as string
+            );
+            vscode.workspace.applyEdit(edit);
+          }
           return;
         }
       }
@@ -197,18 +202,27 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
 
     return vscode.workspace.applyEdit(edit);
   }
-
+  private async getUsfmParserInstance(): Promise<any> {
+    if (!this._usfmParser) {
+      if (!this._usfmParserInitialized) {
+        this._usfmParserInitialized = await USFMParser.init();
+      }
+      await this._usfmParserInitialized;
+      this._usfmParser = new USFMParser();
+    }
+    return this._usfmParser;
+  }
   private async convertUsfmToUsj(usfm: string) {
     console.log("parsing usfm");
-    const usfmParser = await getUsfmParser();
+    const usfmParser = await this.getUsfmParserInstance();
     const usj = usfmParser.usfmToUsj(usfm);
     return usj;
   }
 
   private async convertUsjToUsfm(usj: JSON) {
-    console.log("parsing usj");
-    const usfmParser = await getUsfmParser();
-    const usfm = usfmParser.Usj2Usfm(usj);
+    console.log("parsing usj", usj);
+    const usfmParser = await this.getUsfmParserInstance();
+    const usfm = usfmParser.usjToUsfm(usj);
     return usfm;
   }
 }

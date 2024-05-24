@@ -7,7 +7,7 @@ import { getViewOptions } from "@biblionexus-foundation/scribe-editor";
 import { DEFAULT_VIEW_MODE } from "@biblionexus-foundation/scribe-editor";
 import { UsjNodeOptions } from "@biblionexus-foundation/scribe-editor";
 import { immutableNoteCallerNodeName } from "@biblionexus-foundation/scribe-editor";
-import {debounce} from "lodash";
+import { debounce } from "lodash";
 // import { Usj2Usfm } from "./hooks/usj2Usfm.js";
 import { vscode } from "./vscode";
 import { MessageType } from "../../src/providers/messageTypes.js";
@@ -20,12 +20,12 @@ const defaultUsj: Usj = {
 function App() {
   // const usj = document && useUsfm2Usj({ usfm: document });
   const [usj, setUsj] = useState<Usj | undefined>();
+  const [initialRender, setInitialRender] = useState(true);
   // const [editedUsfm, setEditedUsfm] = useState<string>();
   // const usj = useUsfm2Usj();
 
   const editorRef = useRef<EditorRef>(null!);
   const previousUsjRef = useRef<Usj | null>(null);
-
 
   useEffect(() => {
     console.log("setting message listeners");
@@ -65,21 +65,25 @@ function App() {
   // const noteViewOptions = useMemo(() => getViewOptions(noteViepnpm i @types/lodash.debouncewMode), [noteViewMode]);
 
   const onChange = async (usj: Usj) => {
+    if (initialRender) {
+      setInitialRender(false);
+      return;
+    }
     vscode.postMessage({
       type: MessageType.updateDocument,
       payload: { usj },
     });
   };
-  
+
   const debouncedOnChange = debounce(onChange, 1000);
-  
+
   const handleInputChange = (usj: Usj) => {
-    if (previousUsjRef.current !== usj) {
+    if (previousUsjRef.current !== usj && usj !== defaultUsj) {
       debouncedOnChange(usj);
       previousUsjRef.current = usj;
     }
   };
-  
+
   return (
     // <div className="flex-center m-2 flex h-editor   justify-center p-8">
     //   <div className="relative w-2/3 overflow-hidden rounded-md border-2 border-secondary">
@@ -93,15 +97,15 @@ function App() {
     //       </button>
     //     </div>
 
-        <div>
-          <Editor
-            usjInput={defaultUsj}
-            ref={editorRef}
-            onChange={handleInputChange}
-            viewOptions={viewOptions}
-            nodeOptions={nodeOptions}
-          />
-        </div>
+    <div>
+      <Editor
+        usjInput={defaultUsj}
+        ref={editorRef}
+        onChange={handleInputChange}
+        viewOptions={viewOptions}
+        nodeOptions={nodeOptions}
+      />
+    </div>
     //   </div>
     // </div>
   );

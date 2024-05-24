@@ -7,6 +7,8 @@ import USFMParser from "sj-usfm-grammar";
 export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
   private _webview: vscode.Webview | undefined;
   private _context: vscode.ExtensionContext | undefined;
+  private _usfmParser: any | undefined;
+  private _usfmParserInitialized: Promise<void> | undefined;
 
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new USFMEditorProvider(context);
@@ -41,15 +43,6 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
       webviewPanel.webview,
       this.context.extensionUri
     );
-
-    // function updateWebview() {
-    //   webviewPanel.webview.postMessage({
-    //     type: "update",
-    //     payload: {
-    //       usfm: document.getText(),
-    //     },
-    //   });
-    // }
 
     const updateWebview = async () => {
       console.log("updating webview first call");
@@ -89,44 +82,6 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
       switch (e.type) {
         case MessageType.updateDocument: {
           console.log("updating document", e.payload?.usj);
-       
-       
-          // const edit = new vscode.WorkspaceEdit();
-
-          // // this.updateDocument(document, e.payload?.usfm as string);
-          // edit.replace(
-          //   document.uri,
-          //   new vscode.Range(0, 0, document.lineCount, 0),
-          //   e.payload?.usfm as string
-          // );
-
-          
-          // async function applyEditWithCursorPosition(
-          //   edit: vscode.WorkspaceEdit
-          // ) {
-          //   console.log("applying edit with cursor position");
-          //   const activeEditor = vscode.window.activeTextEditor;
-
-          //   if (activeEditor) {
-          //     // Save the current cursor position
-          //     const cursorPosition = activeEditor.selection.active;
-
-          //     // Apply the edit
-          //     const editResult = await vscode.workspace.applyEdit(edit);
-
-          //     if (editResult) {
-          //       // Restore the cursor position
-          //       const newSelection = new vscode.Selection(
-          //         cursorPosition,
-          //         cursorPosition
-          //       );
-          //       activeEditor.selection = newSelection;
-          //       activeEditor.revealRange(newSelection);
-          //     }
-          //   }
-          // }
-          // vscode.workspace.applyEdit(edit);
-          // applyEditWithCursorPosition(edit);
           return;
         }
       }
@@ -192,6 +147,18 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
 
     return vscode.workspace.applyEdit(edit);
   }
+
+  private async getUsfmParserInstance(): Promise<any> {
+    if (!this._usfmParser) {
+      if (!this._usfmParserInitialized) {
+        this._usfmParserInitialized = USFMParser.init();
+      }
+      await this._usfmParserInitialized;
+      this._usfmParser = new USFMParser();
+    }
+    return this._usfmParser;
+  }
+
   private async convertUsfmToUsj(usfm: string) {
     console.log("parsing usfm");
     await USFMParser.init();
