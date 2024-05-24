@@ -19,6 +19,7 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
   private _context: vscode.ExtensionContext | undefined;
   private _usfmParser: any | undefined;
   private _usfmParserInitialized: Promise<void> | undefined;
+  private _usj: any | undefined;
 
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new USFMEditorProvider(context);
@@ -53,32 +54,11 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
       console.log("Updating webview...");
       const filePath = document.uri.fsPath;
       const usfmContent = document.getText();
-      const newHash = getMd5Hash(usfmContent);
-      const cacheMap = getCacheMap(this.context);
-      const oldHash = cacheMap[filePath];
-
-      if (oldHash && isCacheValid(oldHash)) {
-        // Cache hit with the old hash
-        console.log("Cache hit");
-        const usj = readCache(oldHash);
-        webviewPanel.webview.postMessage({
-          type: "update",
-          payload: { usj },
-        });
-      } else {
-        // Cache miss or content changed
-        console.log("Cache miss or content changed");
-        if (oldHash) {
-          deleteOldCacheFile(oldHash);
-        }
-        const usj = await this.convertUsfmToUsj(usfmContent);
-        writeCache(newHash, usj);
-        updateCacheMap(this.context, filePath, newHash);
-        webviewPanel.webview.postMessage({
-          type: "update",
-          payload: { usj },
-        });
-      }
+      const usj = await this.handleCache(filePath, usfmContent);
+      webviewPanel.webview.postMessage({
+        type: "update",
+        payload: { usj },
+      });
     };
 
     webviewPanel.onDidChangeViewState((e) => {
@@ -101,26 +81,60 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
       changeDocumentSubscription.dispose();
     });
 
+    // webviewPanel.webview.onDidReceiveMessage(async (e) => {
+    //   switch (e.type) {
+    //     case MessageType.updateDocument: {
+    //       console.log("Updating document", e.payload?.usj);
+    //       if (e.payload?.usj.content.length > 0) {
+    //         const usfm = await this.convertUsjToUsfm(e.payload?.usj);
+    //         console.log({ usfm });
+    //         const filePath = document.uri.fsPath;
+    //         await this.handleCache(filePath, usfm);
+    //         // writeCache(oldHash, usj);
+
+    //         const edit = new vscode.WorkspaceEdit();
+    //         edit.replace(
+    //           document.uri,
+    //           new vscode.Range(0, 0, document.lineCount, 0),
+    //           usfm as string
+    //         );
+    //         vscode.workspace.applyEdit(edit);
+    //       }
+    //       return;
+    //     }
+    //   }
+    // });
     webviewPanel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case MessageType.updateDocument: {
           console.log("Updating document", e.payload?.usj);
           if (e.payload?.usj.content.length > 0) {
-            const usfm = await this.convertUsjToUsfm(e.payload?.usj);
+            const usj = e.payload?.usj;
+    
+            // Convert USJ to USFM
+            const usfm = await this.convertUsjToUsfm(usj);
             console.log({ usfm });
-
+    
+            const filePath = document.uri.fsPath;
+    
+            // Update the cache with the new USJ content
+            await this.updateCache(filePath, usj, usfm);
+    
+            // Update the document with the new USFM content
             const edit = new vscode.WorkspaceEdit();
             edit.replace(
-                document.uri,
-                new vscode.Range(0, 0, document.lineCount, 0),
-                usfm as string
+              document.uri,
+              new vscode.Range(0, 0, document.lineCount, 0),
+              usfm as string
             );
-            vscode.workspace.applyEdit(edit);
+            await vscode.workspace.applyEdit(edit);
           }
           return;
         }
       }
     });
+    
+    
 
     updateWebview();
   }
@@ -165,6 +179,7 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
           </body>
         </html>`;
   }
+
   private async markDocumentAsDirty(
     document: vscode.TextDocument
   ): Promise<void> {
@@ -202,6 +217,7 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
 
     return vscode.workspace.applyEdit(edit);
   }
+
   private async getUsfmParserInstance(): Promise<any> {
     if (!this._usfmParser) {
       if (!this._usfmParserInitialized) {
@@ -212,6 +228,7 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
     }
     return this._usfmParser;
   }
+
   private async convertUsfmToUsj(usfm: string) {
     console.log("parsing usfm");
     const usfmParser = await this.getUsfmParserInstance();
@@ -225,4 +242,51 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
     const usfm = usfmParser.usjToUsfm(usj);
     return usfm;
   }
+
+  /**
+   * Reusable method to handle caching logic.
+   */
+  private async handleCache(
+    filePath: string,
+    usfmContent: string
+  ): Promise<any> {
+    console.log({ usfmContent });
+    const newHash = getMd5Hash(usfmContent);
+    const cacheMap = getCacheMap(this.context);
+    const oldHash = cacheMap[filePath];
+
+    if (oldHash && isCacheValid(oldHash) && oldHash === newHash) {
+      // Cache hit with the old hash
+      console.log("Cache hit");
+      return readCache(oldHash);
+    } else {
+      // Cache miss or content changed
+      console.log("Cache miss or content changed");
+      if (oldHash) {
+        deleteOldCacheFile(oldHash);
+      }
+      const usj = await this.convertUsfmToUsj(usfmContent);
+      writeCache(newHash, usj);
+      updateCacheMap(this.context, filePath, newHash);
+      return usj;
+    }
+  }
+  private async updateCache(filePath: string, usj: any, usfm: string): Promise<void> {
+    const newHash = getMd5Hash(usfm);
+    const cacheMap = getCacheMap(this.context);
+    const oldHash = cacheMap[filePath];
+  
+    // Write the new USJ content to the existing cache file if the hash matches
+    if (oldHash && isCacheValid(oldHash) && oldHash === newHash) {
+      writeCache(oldHash, usj);
+    } else {
+      // If the hash doesn't match, update the cache map with the new hash and write the new cache
+      if (oldHash) {
+        deleteOldCacheFile(oldHash);
+      }
+      writeCache(newHash, usj);
+      updateCacheMap(this.context, filePath, newHash);
+    }
+  }
+  
 }
