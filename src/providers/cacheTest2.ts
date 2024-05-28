@@ -54,7 +54,14 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
       console.log("Updating webview...");
       const filePath = document.uri.fsPath;
       const usfmContent = document.getText();
-      const usj = await this.handleCache(filePath, usfmContent);
+      const cachedData = await this.handleCache(filePath, usfmContent);
+      if (cachedData.error) {
+        console.error("Error parsing USFM", cachedData.error);
+        vscode.window.showErrorMessage(`USFM Error : ${cachedData.error}`);
+        // webviewPanel.dispose();
+        return;
+      }
+      const { usj } = cachedData;
       webviewPanel.webview.postMessage({
         type: "update",
         payload: { usj },
@@ -110,16 +117,16 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
           console.log("Updating document", e.payload?.usj);
           if (e.payload?.usj.content.length > 0) {
             const usj = e.payload?.usj;
-    
+
             // Convert USJ to USFM
             const usfm = await this.convertUsjToUsfm(usj);
             console.log({ usfm });
-    
+
             const filePath = document.uri.fsPath;
-    
+
             // Update the cache with the new USJ content
             await this.updateCache(filePath, usj, usfm);
-    
+
             // Update the document with the new USFM content
             const edit = new vscode.WorkspaceEdit();
             edit.replace(
@@ -133,8 +140,6 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
         }
       }
     });
-    
-    
 
     updateWebview();
   }
@@ -232,8 +237,13 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
   private async convertUsfmToUsj(usfm: string) {
     console.log("parsing usfm");
     const usfmParser = await this.getUsfmParserInstance();
-    const usj = usfmParser.usfmToUsj(usfm);
-    return usj;
+    try {
+      const usj = usfmParser.usfmToUsj(usfm);
+      return { usj };
+    } catch (e) {
+      console.log(e);
+      return { usj: { content: [] }, error: e };
+    }
   }
 
   private async convertUsjToUsfm(usj: JSON) {
@@ -258,24 +268,33 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
     if (oldHash && isCacheValid(oldHash) && oldHash === newHash) {
       // Cache hit with the old hash
       console.log("Cache hit");
-      return readCache(oldHash);
+      return { usj: await readCache(oldHash) };
     } else {
       // Cache miss or content changed
       console.log("Cache miss or content changed");
       if (oldHash) {
         deleteOldCacheFile(oldHash);
       }
-      const usj = await this.convertUsfmToUsj(usfmContent);
+      const { usj, error } = await this.convertUsfmToUsj(usfmContent);
+      if (error) {
+        console.error("Error parsing USFM", error);
+        return { error };
+      }
       writeCache(newHash, usj);
       updateCacheMap(this.context, filePath, newHash);
-      return usj;
+      return { usj };
     }
   }
-  private async updateCache(filePath: string, usj: any, usfm: string): Promise<void> {
+
+  private async updateCache(
+    filePath: string,
+    usj: any,
+    usfm: string
+  ): Promise<void> {
     const newHash = getMd5Hash(usfm);
     const cacheMap = getCacheMap(this.context);
     const oldHash = cacheMap[filePath];
-  
+
     // Write the new USJ content to the existing cache file if the hash matches
     if (oldHash && isCacheValid(oldHash) && oldHash === newHash) {
       writeCache(oldHash, usj);
@@ -288,5 +307,4 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
       updateCacheMap(this.context, filePath, newHash);
     }
   }
-  
 }

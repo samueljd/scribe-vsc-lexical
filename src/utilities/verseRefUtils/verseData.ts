@@ -1,5 +1,3 @@
-import { BookPayload } from "../../shared/bookPayloadType";
-
 export interface BookData {
   [book: string]: {
     chapterCount: number;
@@ -33,7 +31,7 @@ export interface BookData {
   };
 }
 
-export function getOrderedBooks(fileNames: Array<string>): BookPayload[] {
+export function getOrderedBooks(fileNames: Array<string>) {
   // return Object.entries(vrefData)
   //   .filter(([fileName]) => fileNames.includes(fileName))
   //   ?.map(([fileName, book]) => ({
