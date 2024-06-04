@@ -1,6 +1,4 @@
 import { useState, useMemo, SyntheticEvent, useRef, useEffect } from "react";
-// import { useEffect, useState } from "react";
-// import { useUsfm2Usj } from "./hooks/useUsfm2Usj.js";
 import { Editor, EditorRef } from "@biblionexus-foundation/scribe-editor";
 import { type Usj } from "@biblionexus-foundation/scribe-editor";
 import { getViewOptions } from "@biblionexus-foundation/scribe-editor";
@@ -8,7 +6,6 @@ import { DEFAULT_VIEW_MODE } from "@biblionexus-foundation/scribe-editor";
 import { UsjNodeOptions } from "@biblionexus-foundation/scribe-editor";
 import { immutableNoteCallerNodeName } from "@biblionexus-foundation/scribe-editor";
 import { debounce } from "lodash";
-// import { Usj2Usfm } from "./hooks/usj2Usfm.js";
 import { vscode } from "./vscode";
 import { MessageType } from "../../src/providers/messageTypes.js";
 
@@ -28,7 +25,6 @@ function App() {
   const previousUsjRef = useRef<Usj | null>(null);
 
   useEffect(() => {
-    console.log("setting message listeners");
     vscode.setMessageListeners((event) => {
       switch (event.data.type) {
         case "update": {

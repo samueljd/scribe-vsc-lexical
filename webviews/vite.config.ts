@@ -9,11 +9,11 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   build: {
-    outDir: 'build', 
+    outDir: "build",
 
     rollupOptions: {
       input: {
-        index: path.resolve(__dirname, 'src/main.tsx'), 
+        index: path.resolve(__dirname, "src/main.tsx"),
         ...Object.fromEntries(
           glob
             .sync("src/views/*.tsx")
@@ -26,18 +26,21 @@ export default defineConfig({
             ])
         ),
       },
-      plugins: [smartAsset({
-        keepName: true,
-        useHash: false,
-      })],
+      plugins: [
+        smartAsset({
+          keepName: true,
+          useHash: false,
+        }),
+      ],
       output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
+        entryFileNames: "assets/[name].js",
+        chunkFileNames: "assets/[name].js",
         assetFileNames: (asset) => {
-          console.log(asset); if (asset.name === 'App.css') {
-            return 'assets/index.css';
+          console.log(asset);
+          if (asset.name === "App.css") {
+            return "assets/index.css";
           }
-          // 
+          //
           return `assets/${asset.name}`;
         },
       },

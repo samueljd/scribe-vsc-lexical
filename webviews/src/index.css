@@ -18,32 +18,6 @@ body {
 .align_end {
   text-align: right;
 }
-@font-face {
-  font-family: "Charis SIL";
-  src: local("Charis SIL"), local("Charis SIL Bold"), local("Charis SIL Bold Italic"),
-    local("Charis SIL Italic"), url("file:///C:/Windows/Fonts/CharisSIL-B.ttf");
-  font-weight: normal;
-}
-@font-face {
-  font-family: "Charis SIL";
-  src: local("Charis SIL Bold");
-  font-weight: bold;
-}
-@font-face {
-  font-family: "Charis SIL";
-  src: local("Charis SIL Italic");
-  font-style: italic;
-}
-@font-face {
-  font-family: "Charis SIL";
-  src: local("Charis SIL Bold Italic");
-  font-weight: bold;
-  font-style: italic;
-}
-.usfm {
-  font-family: "Charis SIL";
-  font-size: 12pt;
-}
 .usfm_id {
   font-size: 100%;
   text-align: left;
@@ -1733,11 +1707,14 @@ body {
     width: 100%;
     height: 4px;
 } */
+[contenteditable]:focus {
+  outline: 0px solid transparent;
+}
 
-body {
+/* body {
   background-color: rgba(252, 252, 252, 1);
   color: rgba(25, 25, 25, 1);
-}
+} */
 
 .marker {
   color: rgba(140, 140, 140, 1);
@@ -1791,11 +1768,11 @@ body {
   font-size: 0.66em;
 }
 
-.caller_highlight {
+/* .caller_highlight {
   background-color: #ffffb5;
   border-top: solid 1px #0000ff;
   border-bottom: solid 1px #0000ff;
-}
+} */
 
 .opennote {
   color: #7777ff;

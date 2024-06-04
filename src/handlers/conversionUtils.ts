@@ -22,7 +22,6 @@ export async function convertUsfmToUsj(usfm: string) {
     const usj = usfmParserInstance.usfmToUsj(usfm);
     return { usj };
   } catch (e) {
-    console.log(e);
     return { usj: { content: [] }, error: e };
   }
 }
