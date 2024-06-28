@@ -22,4 +22,14 @@ export enum MessageType {
   GET_USFM = "get-usfm",
   SCROLL_TO_CHAPTER = "scrollToChapter",
   UPDATE_OBS_REF = "updateObsRef",
+  UPDATE_SCR_REF = "updateScrRef",
+  UPDATE_CHAPTER = "updateChapter",
+
+  //Bible Navigator
+  BLOCK_CLICK = "blockClick",
+  SEND_BOOKS_IN_WORKSPACE = "sendBooksInWorkspace",
+  BOOKS_IN_WORKSPACE_RESPONSE = "booksInWorkspaceResponse",
+  OPEN_USFM_FILE = "openUsfmFile",
+  RECEIVE_MESSAGE = 'RECEIVE_MESSAGE',
+  SEND_MESSAGE = 'SEND_MESSAGE',
 }

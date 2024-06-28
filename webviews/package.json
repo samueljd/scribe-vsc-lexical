@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@biblionexus-foundation/platform-editor": "^0.2.1",
-    "@biblionexus-foundation/scribe-editor": "^0.0.1",
+    "@biblionexus-foundation/scribe-editor": "^0.0.4",
+    "@biblionexus-foundation/scripture-utilities": "^0.0.3",
     "@tailwindcss/typography": "^0.5.13",
+    "@tanstack/react-query": "^5.48.0",
     "@types/lodash": "^4.17.4",
     "@types/lodash.debounce": "^4.0.9",
     "@types/vscode-webview": "^1.57.5",

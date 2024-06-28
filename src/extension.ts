@@ -2,12 +2,12 @@ import * as vscode from "vscode";
 import { Worker } from "worker_threads";
 import * as path from "path";
 import { USFMEditorProvider } from "./providers/USFMEditor";
+import { USFMNavigator } from "./providers/USFMNavigator";
 import { isProjectUSFM } from "./utilities/usfm";
 import { getCacheMapFromFile } from "./handlers/cacheUtils";
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log("Scribe Lexical Editor is now active!");
-  context.subscriptions.push(USFMEditorProvider.register(context));
 
   const currentProjectURI = vscode.workspace.workspaceFolders?.[0].uri;
   const storageUri = context.storageUri;
@@ -19,9 +19,19 @@ export async function activate(context: vscode.ExtensionContext) {
   const metadataFileUri = currentProjectURI?.with({
     path: vscode.Uri.joinPath(currentProjectURI, "metadata.json").path,
   });
+  console.log({ metadataFileUri });
+  if (!currentProjectURI) {
+    vscode.window.showWarningMessage("No workspace opened");
+  }
 
   (async () => {
     const isCurrentProject = await isProjectUSFM(metadataFileUri);
+
+    vscode.commands.executeCommand(
+      "setContext",
+      "scribe-lexical.isProjectUSFM",
+      isCurrentProject
+    );
     if (!isCurrentProject) {
       vscode.window.showWarningMessage(
         "Current project isn't a text translation"
@@ -74,6 +84,8 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     }
   })();
+  context.subscriptions.push(USFMEditorProvider.register(context));
+  context.subscriptions.push(USFMNavigator.register(context));
 }
 
 export function deactivate() {}

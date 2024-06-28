@@ -67,7 +67,6 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
     };
 
     webviewPanel.onDidChangeViewState((e) => {
-
       if (e.webviewPanel.active) {
         updateWebview();
       }
@@ -86,27 +85,6 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
       changeDocumentSubscription.dispose();
     });
 
-    // webviewPanel.webview.onDidReceiveMessage(async (e) => {
-    //   switch (e.type) {
-    //     case MessageType.updateDocument: {
-    //       if (e.payload?.usj.content.length > 0) {
-    //         const usfm = await this.convertUsjToUsfm(e.payload?.usj);
-    //         const filePath = document.uri.fsPath;
-    //         await this.handleCache(filePath, usfm);
-    //         // writeCache(oldHash, usj);
-
-    //         const edit = new vscode.WorkspaceEdit();
-    //         edit.replace(
-    //           document.uri,
-    //           new vscode.Range(0, 0, document.lineCount, 0),
-    //           usfm as string
-    //         );
-    //         vscode.workspace.applyEdit(edit);
-    //       }
-    //       return;
-    //     }
-    //   }
-    // });
     webviewPanel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case MessageType.updateDocument: {
@@ -130,6 +108,10 @@ export class USFMEditorProvider implements vscode.CustomTextEditorProvider {
             );
             await vscode.workspace.applyEdit(edit);
           }
+          return;
+        }
+        case MessageType.UPDATE_SCR_REF: {
+          console.log("Received SCR Ref", e.payload.scrRef);
           return;
         }
       }
